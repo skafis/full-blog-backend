@@ -6,6 +6,7 @@ from django.shortcuts import render, get_object_or_404
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Post
+from .forms import EmailPostForm, CommentForm
 
 # Create your views here.
 def post_list(request):
@@ -35,8 +36,25 @@ def post_detail(request, year, month, day, post):
 									publish__year = year,
 									publish__month=month,
 									publish__day=day)
+	#list all active comments of this post
+	comments = post.comments.filter(active=True)
+
+	if request.method == 'POST':
+    #a comment was posted
+		comment_form = CommentForm(data=request.POST)
+		if comment_form.is_valid():
+            #create comment
+			new_comment = comment_form.save(commit=False)
+			#assign current comment to post
+			new_comment.post = post
+			new_comment.save()
+	else:
+		comment_form  = CommentForm()
+
 	ctx ={
 		'post':post,
+		'comments':comments,
+		'comment_form':comment_form,
 		}
 	return render(request,
 					'blog/post/detail.html',
